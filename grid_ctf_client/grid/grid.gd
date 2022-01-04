@@ -17,7 +17,7 @@ var player_coords = []
 # list of player data, received from server, aligns with players array, updated only when needed
 # use enum for specific data, player_data[player_id][TEAM]
 var player_data = []
-enum Pd {TEAM = 0, COLOR = 1}
+enum Pd {TEAM = 0, ALIVE = 1}
 
 func _ready():
 	generate_map()
@@ -67,9 +67,14 @@ func move_player(player_id : int, dir : Vector2) -> void:
 	
 	# check for collisions
 	for other_p_id in range(len(player_coords)):
-		if other_p_id != player_id:  # skip yourself
-			if player_coords[other_p_id] == new_pos:  # landed on other player
-				print("COLLISION!!")
+		if player_data[player_id][Pd.ALIVE]:  # only collide if player is alive
+			if other_p_id != player_id:  # skip yourself
+				if player_coords[other_p_id] == new_pos:  # landed on other player
+					if player_data[other_p_id][Pd.ALIVE]:
+						print("COLLISION!!")
+						players[other_p_id].update_color(Color(1, 1, 1))  # change color of other player
+						player_data[other_p_id][Pd.ALIVE] = false
+					
 	
 	player_coords[player_id]= Vector2(new_pos)
 
@@ -91,13 +96,14 @@ func generate_players(player_count : int = 2) -> Array:
 	var new_players = []
 	# generate player_data array SERVER
 	for x in range(player_count):
-		player_coords.append(Vector2(x, 0))
+		player_coords.append(Vector2(x*2, x*2))
 		
 		# append array with length of enums
 		var new_array = []
 		new_array.resize(len(Pd))
 		player_data.append(new_array)  
 		player_data[x][Pd.TEAM] = x % 2
+		player_data[x][Pd.ALIVE] = true
 		
 		# create new player and add to list
 		var new_player = player_inst.instance()
