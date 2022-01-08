@@ -9,6 +9,9 @@ extents = Vector2( 11, 11 )
 [node name="player" type="KinematicBody2D"]
 z_index = 1
 script = ExtResource( 2 )
+RED_TEAM_COLOR = Color( 0.658824, 0, 0, 1 )
+BLUE_TEAM_COLOR = Color( 0, 0.0470588, 0.721569, 1 )
+GRAY_TEAM_COLOR = Color( 0.329412, 0.313726, 0.313726, 1 )
 
 [node name="icon" type="Sprite" parent="."]
 position = Vector2( 8, 8 )

@@ -1,6 +1,7 @@
 extends Node2D
 
-var cell_res = load("res://grid/grid_cell.png")
+var cell_res_red = load("res://grid/grid_cell_red.png")
+var cell_res_blue = load("res://grid/grid_cell_blue.png")
 
 var CELL_WIDTH := 32
 var GRID_WIDTH := 28  # should be even number
@@ -68,33 +69,54 @@ func move_player(player_id : int, dir : Vector2) -> void:
 	var new_pos = player_coords[player_id] + dir
 	var new_x = clamp(new_pos.x, 0, GRID_WIDTH-1)
 	var new_y = clamp(new_pos.y, 0, GRID_HEIGHT-1)
-	new_pos = Vector2(new_x, new_y)  # update with clamp
+	player_coords[player_id]= Vector2(new_x, new_y)  # update with clamp
 	
-	# check for collisions with players
+	# check for collisions with players, only collide if attacker is in defender territory
+	# red is 0 and on left, blue is 1 and on right
+	# only collides when a player moves into another for now
 	for other_p_id in range(len(player_coords)):
 		if player_data[player_id][Pd.ALIVE]:  # only collide if player is alive
 			if other_p_id != player_id:  # skip yourself
-				if player_coords[other_p_id] == new_pos:  # landed on other player
-					if player_data[other_p_id][Pd.ALIVE]:
-						print("COLLISION!!")
-						players[other_p_id].update_color(Color(1, 1, 1, .3))  # change color of other player
-						player_data[other_p_id][Pd.ALIVE] = false
+				if player_coords[other_p_id] == player_coords[player_id]:  # landed on other player
+					if player_data[other_p_id][Pd.TEAM] != player_data[player_id][Pd.TEAM]:  # player on other team
+						if player_data[other_p_id][Pd.ALIVE]:
+							# check if other_player is on attacking player's side
+							#if x < (GRID_WIDTH/2):
+							# if collider is red team, collide with players on left side only
+							var on_sides = false
+							if player_data[player_id][Pd.TEAM] == 0:  # red team
+								if player_coords[player_id].x < GRID_WIDTH/2:
+									on_sides = true
+							# elif blue team
+							elif player_data[player_id][Pd.TEAM] == 1:  # blue team
+								if player_coords[player_id].x >= GRID_WIDTH/2:
+									on_sides = true
+							# else no collision
+							if on_sides:
+								print("COLLISION!!")
+								players[other_p_id].update_color(Color(1, 1, 1, .3))  # change color of other player
+								player_data[other_p_id][Pd.ALIVE] = false
 	
 	# check for collision with flag
 	for flag_id in range(len(flags)):
 		pass
-	
-	player_coords[player_id]= Vector2(new_pos)
 
 
 func generate_map() -> void:
-	var cell_sprite = Sprite.new()
-	cell_sprite.texture = cell_res
-	cell_sprite.centered = false
+	var cell_sprite_red = Sprite.new()
+	cell_sprite_red.texture = cell_res_red
+	cell_sprite_red.centered = false
+	var cell_sprite_blue = Sprite.new()
+	cell_sprite_blue.texture = cell_res_blue
+	cell_sprite_blue.centered = false
 	
 	for x in range(GRID_WIDTH):
 		for y in range(GRID_HEIGHT):
-			var new_cell = cell_sprite.duplicate()
+			var new_cell
+			if x < (GRID_WIDTH/2):
+				new_cell = cell_sprite_red.duplicate()
+			else:
+				new_cell = cell_sprite_blue.duplicate()
 			new_cell.position = Vector2(x * CELL_WIDTH, y * CELL_WIDTH)
 			origin.add_child(new_cell)
 
@@ -102,18 +124,19 @@ func generate_map() -> void:
 func generate_players(player_count : int = 2):
 	
 	# generate player_data array SERVER
-	for x in range(player_count):
-		player_coords.append(Vector2(x*2, x*2))
+	for player_id in range(player_count):
+		player_coords.append(Vector2(player_id*2, player_id*2))  # temp
 		
 		# append array with length of enums
 		var new_array = []
 		new_array.resize(len(Pd))
 		player_data.append(new_array)  
-		player_data[x][Pd.TEAM] = x % 2
-		player_data[x][Pd.ALIVE] = true
+		player_data[player_id][Pd.TEAM] = player_id % 2
+		player_data[player_id][Pd.ALIVE] = true
 		
 		# create new player and add to list
 		var new_player = player_inst.instance()
+		new_player.update_team_color(player_data[player_id][Pd.TEAM])  # set color based on team number
 		origin.add_child(new_player)
 		players.append(new_player)
 
