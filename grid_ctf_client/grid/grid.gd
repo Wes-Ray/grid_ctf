@@ -19,7 +19,7 @@ var player_coords = []
 # list of player data, received from server, aligns with players array, updated only when needed
 # use enum for specific data, player_data[player_id][TEAM]
 var player_data = []
-enum Pd {TEAM = 0, ALIVE = 1}
+enum Pd {TEAM = 0, ALIVE = 1, HAS_FLAG = 2}
 
 var flags = []  # local flag objects, aligned with flag_coords array
 var flag_coords = [Vector2(), Vector2()]  # flag coords, updated each tick
@@ -96,10 +96,19 @@ func move_player(player_id : int, dir : Vector2) -> void:
 								print("COLLISION!!")
 								players[other_p_id].update_color(Color(1, 1, 1, .3))  # change color of other player
 								player_data[other_p_id][Pd.ALIVE] = false
+								player_data[other_p_id][Pd.HAS_FLAG] = false  # drop flag
 	
 	# check for collision with flag
 	for flag_id in range(len(flags)):
-		pass
+		if player_coords[player_id] == flag_coords[flag_id]:  # check for flag collision
+			if player_data[player_id][Pd.TEAM] != flag_id:  # team = 0 or 1 (red or blue)
+				print("flag collided")
+				player_data[player_id][Pd.HAS_FLAG] = true
+	
+	# if player HAS_FLAG, update flag position
+	if player_data[player_id][Pd.HAS_FLAG] == true:
+		var opposite_team_num = (player_data[player_id][Pd.TEAM] + 1) % 2
+		flag_coords[opposite_team_num] = player_coords[player_id]
 
 
 func generate_map() -> void:
@@ -121,7 +130,7 @@ func generate_map() -> void:
 			origin.add_child(new_cell)
 
 
-func generate_players(player_count : int = 2):
+func generate_players(player_count : int = 2) -> void:
 	
 	# generate player_data array SERVER
 	for player_id in range(player_count):
@@ -133,6 +142,7 @@ func generate_players(player_count : int = 2):
 		player_data.append(new_array)  
 		player_data[player_id][Pd.TEAM] = player_id % 2
 		player_data[player_id][Pd.ALIVE] = true
+		player_data[player_id][Pd.HAS_FLAG] = false
 		
 		# create new player and add to list
 		var new_player = player_inst.instance()
@@ -141,13 +151,15 @@ func generate_players(player_count : int = 2):
 		players.append(new_player)
 
 
-func generate_flags(player_count : int = 2):
-	for x in range(player_count):
+func generate_flags() -> void:
+	for x in range(2):  # only 2 flags
 		var new_flag = flag_inst.instance()
 		origin.add_child(new_flag)
 		flags.append(new_flag)
 	
 	# team 0 location
 	flag_coords[0] = Vector2(0, GRID_HEIGHT/2)
+	flags[0].set_team(0)
 	# team 1 location
 	flag_coords[1] = Vector2(GRID_WIDTH-1, GRID_HEIGHT/2)
+	flags[1].set_team(1)
