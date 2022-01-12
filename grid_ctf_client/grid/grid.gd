@@ -1,5 +1,8 @@
 extends Node2D
 
+var scores = [0, 0]  # red, blue scores
+export var SCORE_LIMIT = 5
+
 var cell_res_red = load("res://grid/grid_cell_red.png")
 var cell_res_blue = load("res://grid/grid_cell_blue.png")
 
@@ -100,15 +103,34 @@ func move_player(player_id : int, dir : Vector2) -> void:
 	
 	# check for collision with flag
 	for flag_id in range(len(flags)):
-		if player_coords[player_id] == flag_coords[flag_id]:  # check for flag collision
-			if player_data[player_id][Pd.TEAM] != flag_id:  # team = 0 or 1 (red or blue)
-				print("flag collided")
-				player_data[player_id][Pd.HAS_FLAG] = true
+		if player_data[player_id][Pd.ALIVE] == true:
+			if player_coords[player_id] == flag_coords[flag_id]:  # check for flag collision
+				if player_data[player_id][Pd.TEAM] != flag_id:  # team = 0 or 1 (red or blue)
+					print("flag collided")
+					player_data[player_id][Pd.HAS_FLAG] = true
 	
 	# if player HAS_FLAG, update flag position
 	if player_data[player_id][Pd.HAS_FLAG] == true:
-		var opposite_team_num = (player_data[player_id][Pd.TEAM] + 1) % 2
+		var player_team = player_data[player_id][Pd.TEAM]
+		var opposite_team_num = (player_team + 1) % 2
 		flag_coords[opposite_team_num] = player_coords[player_id]
+		
+		# red 0 on right side with flag
+		if player_team == 0:
+			if flag_coords[opposite_team_num].x < GRID_WIDTH/2:
+				print("RED CAPTURED FLAG")
+				scores[player_team] = scores[player_team] + 1
+				flag_coords[opposite_team_num] = Vector2(GRID_WIDTH-1, GRID_HEIGHT/2)  # reset flag
+				player_data[player_id][Pd.HAS_FLAG] = false
+				refresh_scores()
+		# blue 1 on left side with flag
+		elif player_team == 1:
+			if flag_coords[opposite_team_num].x >= GRID_WIDTH/2:
+				print("BLUE CAPTURED FLAG")
+				scores[player_team] = scores[player_team] + 1
+				flag_coords[opposite_team_num] = Vector2(0, GRID_HEIGHT/2)  # reset flag
+				player_data[player_id][Pd.HAS_FLAG] = false
+				refresh_scores()
 
 
 func generate_map() -> void:
@@ -147,14 +169,25 @@ func generate_players(player_count : int = 2) -> void:
 		# create new player and add to list
 		var new_player = player_inst.instance()
 		new_player.update_team_color(player_data[player_id][Pd.TEAM])  # set color based on team number
-		origin.add_child(new_player)
+#		origin.add_child(new_player)
+		add_child(new_player)
 		players.append(new_player)
+
+
+# called to update scores
+func refresh_scores():
+	$red_score.text = str(scores[0])
+	$blue_score.text = str(scores[1])
+	if scores[0] >= SCORE_LIMIT:
+		print("red wins!")
+	elif scores[1] >= SCORE_LIMIT:
+		print("blue wins!")
 
 
 func generate_flags() -> void:
 	for x in range(2):  # only 2 flags
 		var new_flag = flag_inst.instance()
-		origin.add_child(new_flag)
+		add_child(new_flag)
 		flags.append(new_flag)
 	
 	# team 0 location
