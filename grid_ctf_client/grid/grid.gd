@@ -5,6 +5,7 @@ export var SCORE_LIMIT = 5
 
 var cell_res_red = load("res://grid/grid_cell_red.png")
 var cell_res_blue = load("res://grid/grid_cell_blue.png")
+var cell_res_gray = load("res://grid/grid_cell.png")
 
 var CELL_WIDTH := 32
 var GRID_WIDTH := 28  # should be even number
@@ -35,6 +36,8 @@ func _ready():
 
 
 func _process(delta):
+	# on server, this should mostly just be waiting for player movement packets
+	
 	# move local player 0
 	if Input.is_action_just_pressed("ui_right"):
 		move_player(0, Vector2.RIGHT)
@@ -68,9 +71,14 @@ func _process(delta):
 # this function should be used server-side, a remote function for the client will 
 # only send inputs with their player_id to the server
 func move_player(player_id : int, dir : Vector2) -> void:
-	# clamp cell_pos to grid_width and height
+	# clamp cell_pos to grid_width and height, barring safe zones on either side
 	var new_pos = player_coords[player_id] + dir
-	var new_x = clamp(new_pos.x, 0, GRID_WIDTH-1)
+	# clamp new_x based on safe zones for red/blue
+	var new_x
+	if player_data[player_id][Pd.TEAM] == 0:  # red can't go all the way left
+		new_x = clamp(new_pos.x, 1, GRID_WIDTH-1)
+	elif player_data[player_id][Pd.TEAM] == 1:  # blue can't go all the way right
+		new_x = clamp(new_pos.x, 0, GRID_WIDTH-2)
 	var new_y = clamp(new_pos.y, 0, GRID_HEIGHT-1)
 	player_coords[player_id]= Vector2(new_x, new_y)  # update with clamp
 	
@@ -97,9 +105,21 @@ func move_player(player_id : int, dir : Vector2) -> void:
 							# else no collision
 							if on_sides:
 								print("COLLISION!!")
-								players[other_p_id].update_color(Color(1, 1, 1, .3))  # change color of other player
+#								players[other_p_id].update_color(Color(1, 1, 1, .4))  # change color of other player
+								players[other_p_id].set_alive(false)
 								player_data[other_p_id][Pd.ALIVE] = false
 								player_data[other_p_id][Pd.HAS_FLAG] = false  # drop flag
+	
+	# respawn player, if dead and next to safe zone
+	if player_data[player_id][Pd.ALIVE] == false:
+		if player_data[player_id][Pd.TEAM] == 0:  # red, left side respawn
+			if player_coords[player_id].x == 1:
+				players[player_id].set_alive(true)
+				player_data[player_id][Pd.ALIVE] = true
+		elif player_data[player_id][Pd.TEAM] == 1:  # blue, right side respawn
+			if player_coords[player_id].x == GRID_WIDTH-2:
+				players[player_id].set_alive(true)
+				player_data[player_id][Pd.ALIVE] = true
 	
 	# check for collision with flag
 	for flag_id in range(len(flags)):
@@ -122,7 +142,7 @@ func move_player(player_id : int, dir : Vector2) -> void:
 				scores[player_team] = scores[player_team] + 1
 				flag_coords[opposite_team_num] = Vector2(GRID_WIDTH-1, GRID_HEIGHT/2)  # reset flag
 				player_data[player_id][Pd.HAS_FLAG] = false
-				refresh_scores()
+				refresh_hud()
 		# blue 1 on left side with flag
 		elif player_team == 1:
 			if flag_coords[opposite_team_num].x >= GRID_WIDTH/2:
@@ -130,7 +150,7 @@ func move_player(player_id : int, dir : Vector2) -> void:
 				scores[player_team] = scores[player_team] + 1
 				flag_coords[opposite_team_num] = Vector2(0, GRID_HEIGHT/2)  # reset flag
 				player_data[player_id][Pd.HAS_FLAG] = false
-				refresh_scores()
+				refresh_hud()
 
 
 func generate_map() -> void:
@@ -140,11 +160,16 @@ func generate_map() -> void:
 	var cell_sprite_blue = Sprite.new()
 	cell_sprite_blue.texture = cell_res_blue
 	cell_sprite_blue.centered = false
+	var cell_sprite_gray = Sprite.new()
+	cell_sprite_gray.texture = cell_res_gray
+	cell_sprite_gray.centered = false
 	
 	for x in range(GRID_WIDTH):
 		for y in range(GRID_HEIGHT):
 			var new_cell
-			if x < (GRID_WIDTH/2):
+			if x == 0 or x == GRID_WIDTH-1:
+				new_cell = cell_sprite_gray.duplicate()
+			elif x < (GRID_WIDTH/2):
 				new_cell = cell_sprite_red.duplicate()
 			else:
 				new_cell = cell_sprite_blue.duplicate()
@@ -156,7 +181,7 @@ func generate_players(player_count : int = 2) -> void:
 	
 	# generate player_data array SERVER
 	for player_id in range(player_count):
-		player_coords.append(Vector2(player_id*2, player_id*2))  # temp
+		player_coords.append(Vector2(player_id*2+1, player_id*2+1))  # temp
 		
 		# append array with length of enums
 		var new_array = []
@@ -175,9 +200,9 @@ func generate_players(player_count : int = 2) -> void:
 
 
 # called to update scores
-func refresh_scores():
-	$red_score.text = str(scores[0])
-	$blue_score.text = str(scores[1])
+func refresh_hud():
+	$hud/red_score.text = str(scores[0])
+	$hud/blue_score.text = str(scores[1])
 	if scores[0] >= SCORE_LIMIT:
 		print("red wins!")
 	elif scores[1] >= SCORE_LIMIT:
