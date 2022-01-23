@@ -27,13 +27,25 @@ enum Pd {TEAM = 0, ALIVE = 1, HAS_FLAG = 2}
 
 var flags = []  # local flag objects, aligned with flag_coords array
 var flag_coords = [Vector2(), Vector2()]  # flag coords, updated each tick
-var flag_attached_array = [-1, -1]  # flag linked to a player index or none (-1)
+
+onready var flag_reset_timers := [Timer.new(), Timer.new()]
+var FLAG_RESET_TIME := 3  # time in seconds to reset flag
+
 
 func _ready():
 	generate_map()
 	generate_players()
 	generate_flags()
+	
+	# connect timers to functions
+	add_child(flag_reset_timers[0])
+	flag_reset_timers[0].connect("timeout", self, "reset_flag", [0])
+	add_child(flag_reset_timers[1])
+	flag_reset_timers[1].connect("timeout", self, "reset_flag", [1])
 
+
+func test(x):
+	print("TEST FUNC CALLED", x)
 
 func _process(delta):
 	# on server, this should mostly just be waiting for player movement packets
@@ -108,7 +120,12 @@ func move_player(player_id : int, dir : Vector2) -> void:
 #								players[other_p_id].update_color(Color(1, 1, 1, .4))  # change color of other player
 								players[other_p_id].set_alive(false)
 								player_data[other_p_id][Pd.ALIVE] = false
-								player_data[other_p_id][Pd.HAS_FLAG] = false  # drop flag
+								# if other player has flag, drop flag and start reset timer
+								if player_data[other_p_id][Pd.HAS_FLAG] == true:
+									player_data[other_p_id][Pd.HAS_FLAG] = false  # drop flag
+									start_flag_reset_timer(other_p_id)
+								
+								
 	
 	# respawn player, if dead and next to safe zone
 	if player_data[player_id][Pd.ALIVE] == false:
@@ -135,22 +152,38 @@ func move_player(player_id : int, dir : Vector2) -> void:
 		var opposite_team_num = (player_team + 1) % 2
 		flag_coords[opposite_team_num] = player_coords[player_id]
 		
-		# red 0 on right side with flag
+		# red 0 with flag, capture check
 		if player_team == 0:
-			if flag_coords[opposite_team_num].x < GRID_WIDTH/2:
+			if flag_coords[opposite_team_num].x == 1:  #
 				print("RED CAPTURED FLAG")
 				scores[player_team] = scores[player_team] + 1
-				flag_coords[opposite_team_num] = Vector2(GRID_WIDTH-1, GRID_HEIGHT/2)  # reset flag
+				reset_flag(opposite_team_num)
 				player_data[player_id][Pd.HAS_FLAG] = false
 				refresh_hud()
-		# blue 1 on left side with flag
+		# blue 1 flag, capture check
 		elif player_team == 1:
-			if flag_coords[opposite_team_num].x >= GRID_WIDTH/2:
+			if flag_coords[opposite_team_num].x == GRID_WIDTH-2:
 				print("BLUE CAPTURED FLAG")
 				scores[player_team] = scores[player_team] + 1
-				flag_coords[opposite_team_num] = Vector2(0, GRID_HEIGHT/2)  # reset flag
+				reset_flag(opposite_team_num)
 				player_data[player_id][Pd.HAS_FLAG] = false
 				refresh_hud()
+
+
+func reset_flag(flag_id) -> void:
+	if flag_id == 1:  # reset red
+		flag_coords[0] = Vector2(0, GRID_HEIGHT/2)
+		flag_reset_timers[0].stop()
+	elif flag_id == 0:  # reset blue
+		flag_coords[1] = Vector2(GRID_WIDTH-1, GRID_HEIGHT/2)
+		flag_reset_timers[1].stop()
+
+
+func start_flag_reset_timer(flag_id : int) -> void:
+	flag_reset_timers[flag_id].wait_time = FLAG_RESET_TIME
+	flag_reset_timers[flag_id].start()
+	print("CALLED")
+
 
 
 func generate_map() -> void:
