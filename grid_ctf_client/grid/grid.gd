@@ -29,7 +29,7 @@ var flags = []  # local flag objects, aligned with flag_coords array
 var flag_coords = [Vector2(), Vector2()]  # flag coords, updated each tick
 
 onready var flag_reset_timers := [Timer.new(), Timer.new()]
-var FLAG_RESET_TIME := 3  # time in seconds to reset flag
+var FLAG_RESET_TIME := 5  # time in seconds to reset flag
 
 
 func _ready():
@@ -39,9 +39,9 @@ func _ready():
 	
 	# connect timers to functions
 	add_child(flag_reset_timers[0])
-	flag_reset_timers[0].connect("timeout", self, "reset_flag", [0])
+	flag_reset_timers[0].connect("timeout", self, "reset_flag", [1])
 	add_child(flag_reset_timers[1])
-	flag_reset_timers[1].connect("timeout", self, "reset_flag", [1])
+	flag_reset_timers[1].connect("timeout", self, "reset_flag", [0])
 
 
 func test(x):
@@ -115,17 +115,22 @@ func move_player(player_id : int, dir : Vector2) -> void:
 								if player_coords[player_id].x >= GRID_WIDTH/2:
 									on_sides = true
 							# else no collision
-							if on_sides:
-								print("COLLISION!!")
-#								players[other_p_id].update_color(Color(1, 1, 1, .4))  # change color of other player
+							if on_sides:  # kill other player if on sides
+								print("COLLISION ON SIDES")
 								players[other_p_id].set_alive(false)
 								player_data[other_p_id][Pd.ALIVE] = false
 								# if other player has flag, drop flag and start reset timer
 								if player_data[other_p_id][Pd.HAS_FLAG] == true:
 									player_data[other_p_id][Pd.HAS_FLAG] = false  # drop flag
 									start_flag_reset_timer(other_p_id)
-								
-								
+							elif not on_sides:  # kill self if on same side
+								print("COLLISION OFF SIDES")
+								players[player_id].set_alive(false)
+								player_data[player_id][Pd.ALIVE] = false
+								# if other player has flag, drop flag and start reset timer
+								if player_data[player_id][Pd.HAS_FLAG] == true:
+									player_data[player_id][Pd.HAS_FLAG] = false  # drop flag
+									start_flag_reset_timer(player_id)
 	
 	# respawn player, if dead and next to safe zone
 	if player_data[player_id][Pd.ALIVE] == false:
@@ -171,10 +176,10 @@ func move_player(player_id : int, dir : Vector2) -> void:
 
 
 func reset_flag(flag_id) -> void:
-	if flag_id == 1:  # reset red
+	if flag_id == 0:  # reset red
 		flag_coords[0] = Vector2(0, GRID_HEIGHT/2)
 		flag_reset_timers[0].stop()
-	elif flag_id == 0:  # reset blue
+	elif flag_id == 1:  # reset blue
 		flag_coords[1] = Vector2(GRID_WIDTH-1, GRID_HEIGHT/2)
 		flag_reset_timers[1].stop()
 
