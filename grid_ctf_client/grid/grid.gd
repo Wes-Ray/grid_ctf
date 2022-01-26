@@ -146,10 +146,14 @@ func move_player(player_id : int, dir : Vector2) -> void:
 	# check for collision with flag
 	for flag_id in range(len(flags)):
 		if player_data[player_id][Pd.ALIVE] == true:
-			if player_coords[player_id] == flag_coords[flag_id]:  # check for flag collision
+			if player_coords[player_id] == flag_coords[flag_id]:  # check for flag collision with goal flag
 				if player_data[player_id][Pd.TEAM] != flag_id:  # team = 0 or 1 (red or blue)
 					print("flag collided")
 					player_data[player_id][Pd.HAS_FLAG] = true
+				else:
+					player_coords[player_id] = Vector2(new_x, new_y) + ( dir*-1 )
+#			elif player_coords[player_id] == flag_coords[(player_id + 1) % 2]:  # check for collision with own flag, no puppy guarding
+				
 	
 	# if player HAS_FLAG, update flag position
 	if player_data[player_id][Pd.HAS_FLAG] == true:
