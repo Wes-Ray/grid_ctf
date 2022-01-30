@@ -14,7 +14,7 @@ _global_script_class_icons={
 
 [application]
 
-config/name="Grid CTF Client"
+config/name="Grid CTF Server"
 run/main_scene="res://splash_screen/splash_screen.tscn"
 config/icon="res://icon.png"
 
