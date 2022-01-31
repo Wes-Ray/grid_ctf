@@ -11,9 +11,15 @@ func _ready():
 	pass
 	print("connecting...")
 	
+	
 	var peer = NetworkedMultiplayerENet.new()
 	peer.create_client(server_ip, server_port)
 	get_tree().network_peer = peer
 	
 	#get_tree().change_scene("res://grid/grid.tscn")
 
+
+func _process(delta):
+	if Input.is_action_just_pressed("ui_select"):
+		print("sending test func call")
+		rpc("test")

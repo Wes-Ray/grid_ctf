@@ -1,5 +1,15 @@
 extends Node2D
 
+# server setup
+# initialize server
+
+var SERVER_IP := "127.0.0.1"  # server ip
+var SERVER_PORT := 51234
+var MAX_PLAYERS = 10
+onready var peer = NetworkedMultiplayerENet.new()
+# end server set up
+
+
 var scores = [0, 0]  # red, blue scores
 export var SCORE_LIMIT = 5
 
@@ -33,51 +43,62 @@ var FLAG_RESET_TIME := 5  # time in seconds to reset flag
 
 
 func _ready():
-	generate_map()
-	generate_players()
-	generate_flags()
+	print("starting server...")
+	peer.create_server(SERVER_PORT, MAX_PLAYERS)
+	get_tree().network_peer = peer
 	
-	# connect timers to functions
-	add_child(flag_reset_timers[0])
-	flag_reset_timers[0].connect("timeout", self, "reset_flag", [1])
-	add_child(flag_reset_timers[1])
-	flag_reset_timers[1].connect("timeout", self, "reset_flag", [0])
+#	generate_map()
+#	generate_players()
+#	generate_flags()
+#
+#	# connect timers to functions
+#	add_child(flag_reset_timers[0])
+#	flag_reset_timers[0].connect("timeout", self, "reset_flag", [1])
+#	add_child(flag_reset_timers[1])
+#	flag_reset_timers[1].connect("timeout", self, "reset_flag", [0])
 
 
-func test(x):
-	print("TEST FUNC CALLED", x)
+remote func test():
+	print("TEST FUNC CALLED")
+
 
 func _process(delta):
+	pass
 	# on server, this should mostly just be waiting for player movement packets
 	
-	# move local player 0
-	if Input.is_action_just_pressed("ui_right"):
-		move_player(0, Vector2.RIGHT)
-	elif Input.is_action_just_pressed("ui_left"):
-		move_player(0, Vector2.LEFT)
-	elif Input.is_action_just_pressed("ui_up"):
-		move_player(0, Vector2.UP)
-	elif Input.is_action_just_pressed("ui_down"):
-		move_player(0, Vector2.DOWN)
-	
-	# move local player 1, this is only for debug
-	if Input.is_action_just_pressed("move_right"):
-		move_player(1, Vector2.RIGHT)
-	elif Input.is_action_just_pressed("move_left"):
-		move_player(1, Vector2.LEFT)
-	elif Input.is_action_just_pressed("move_up"):
-		move_player(1, Vector2.UP)
-	elif Input.is_action_just_pressed("move_down"):
-		move_player(1, Vector2.DOWN)
+	# wait for player connections
 	
 	
-	# update grid reflection of player_cell_pos
-	for id in range(len(players)):
-		players[id].position = (player_coords[id] * CELL_WIDTH) + origin.position
+	# handle player inputs
 	
-	# draw flags
-	for id in range(len(flags)):
-		flags[id].position = (flag_coords[id] * CELL_WIDTH) + origin.position
+#	# move local player 0
+#	if Input.is_action_just_pressed("ui_right"):
+#		move_player(0, Vector2.RIGHT)
+#	elif Input.is_action_just_pressed("ui_left"):
+#		move_player(0, Vector2.LEFT)
+#	elif Input.is_action_just_pressed("ui_up"):
+#		move_player(0, Vector2.UP)
+#	elif Input.is_action_just_pressed("ui_down"):
+#		move_player(0, Vector2.DOWN)
+#
+#	# move local player 1, this is only for debug
+#	if Input.is_action_just_pressed("move_right"):
+#		move_player(1, Vector2.RIGHT)
+#	elif Input.is_action_just_pressed("move_left"):
+#		move_player(1, Vector2.LEFT)
+#	elif Input.is_action_just_pressed("move_up"):
+#		move_player(1, Vector2.UP)
+#	elif Input.is_action_just_pressed("move_down"):
+#		move_player(1, Vector2.DOWN)
+#
+#
+#	# update grid reflection of player_cell_pos
+#	for id in range(len(players)):
+#		players[id].position = (player_coords[id] * CELL_WIDTH) + origin.position
+#
+#	# draw flags
+#	for id in range(len(flags)):
+#		flags[id].position = (flag_coords[id] * CELL_WIDTH) + origin.position
 
 
 # this function should be used server-side, a remote function for the client will 
@@ -191,8 +212,6 @@ func reset_flag(flag_id) -> void:
 func start_flag_reset_timer(flag_id : int) -> void:
 	flag_reset_timers[flag_id].wait_time = FLAG_RESET_TIME
 	flag_reset_timers[flag_id].start()
-	print("CALLED")
-
 
 
 func generate_map() -> void:
