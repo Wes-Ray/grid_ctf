@@ -20,7 +20,7 @@ config/icon="res://icon.png"
 
 [autoload]
 
-Network="*res://network.gd"
+MP="*res://MP.gd"
 
 [importer_defaults]
 

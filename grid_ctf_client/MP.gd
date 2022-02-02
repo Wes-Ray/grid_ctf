@@ -22,3 +22,6 @@ func _on_connection_failed():
 func _on_connection_succeeded():
 	print("connection successful")
 	rpc_id(1, "test", [Vector2(), Vector2(1, 2)])  # id 1 is the server
+
+
+# need to make funcs to accept updates and send inputs to server

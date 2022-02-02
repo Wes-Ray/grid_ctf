@@ -24,10 +24,13 @@ func _client_disconnected(player_id):
 	print("Client: ", str(player_id), " disconnected")
 
 
-remote func test(x):
+remote func test(x = -1):
 	var player_id = get_tree().get_rpc_sender_id()
 	
 	print("test func called")
 	print("player_id: ", player_id)
 	print("x: ", x)
 	# rpc_id(player_id, "test")
+
+
+# need to make functions to send updates to all players, and receive inputs from individual players
