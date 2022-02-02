@@ -18,6 +18,10 @@ config/name="Grid CTF Client"
 run/main_scene="res://splash_screen/splash_screen.tscn"
 config/icon="res://icon.png"
 
+[autoload]
+
+Network="*res://network.gd"
+
 [importer_defaults]
 
 texture={

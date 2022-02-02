@@ -1,14 +1,5 @@
 extends Node2D
 
-# server setup
-# initialize server
-
-var SERVER_IP := "127.0.0.1"  # server ip
-var SERVER_PORT := 51234
-var MAX_PLAYERS = 10
-onready var peer = NetworkedMultiplayerENet.new()
-# end server set up
-
 
 var scores = [0, 0]  # red, blue scores
 export var SCORE_LIMIT = 5
@@ -43,9 +34,7 @@ var FLAG_RESET_TIME := 5  # time in seconds to reset flag
 
 
 func _ready():
-	print("starting server...")
-	peer.create_server(SERVER_PORT, MAX_PLAYERS)
-	get_tree().network_peer = peer
+	pass
 	
 #	generate_map()
 #	generate_players()
@@ -59,7 +48,7 @@ func _ready():
 
 
 remote func test():
-	print("TEST FUNC CALLED")
+	print("internal grid test func called")
 
 
 func _process(delta):

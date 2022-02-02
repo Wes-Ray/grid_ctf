@@ -18,6 +18,10 @@ config/name="Grid CTF Server"
 run/main_scene="res://grid/grid.tscn"
 config/icon="res://icon.png"
 
+[autoload]
+
+Network="*res://network.gd"
+
 [importer_defaults]
 
 texture={
