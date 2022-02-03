@@ -35,9 +35,11 @@ var FLAG_RESET_TIME := 5  # time in seconds to reset flag
 
 func _ready():
 	pass
-	var x = MP  # global MP singleton
-	print("test max p: ", x.MAX_PLAYERS)
-	x.test()
+	MP.start_server(self)
+#	var x = MP  # global MP singleton
+#	print("test max p: ", x.MAX_PLAYERS)
+#	x.test()
+
 #	generate_map()
 #	generate_players()
 #	generate_flags()
@@ -49,8 +51,8 @@ func _ready():
 #	flag_reset_timers[1].connect("timeout", self, "reset_flag", [0])
 
 
-remote func test():
-	print("internal grid test func called")
+func spawn_player(player_id):
+	print("asdf")
 
 
 func _process(delta):
