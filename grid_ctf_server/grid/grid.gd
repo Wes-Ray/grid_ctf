@@ -40,51 +40,24 @@ func _ready():
 #	print("test max p: ", x.MAX_PLAYERS)
 #	x.test()
 
-#	generate_map()
-#	generate_players()
-#	generate_flags()
-#
-#	# connect timers to functions
-#	add_child(flag_reset_timers[0])
-#	flag_reset_timers[0].connect("timeout", self, "reset_flag", [1])
-#	add_child(flag_reset_timers[1])
-#	flag_reset_timers[1].connect("timeout", self, "reset_flag", [0])
+	# can remove gfx later
+	generate_map()
+	generate_players()
+	generate_flags()
+
+	# connect timers to functions
+	add_child(flag_reset_timers[0])
+	flag_reset_timers[0].connect("timeout", self, "reset_flag", [1])
+	add_child(flag_reset_timers[1])
+	flag_reset_timers[1].connect("timeout", self, "reset_flag", [0])
 
 
 func spawn_player(player_id):
-	print("asdf")
+	print("spawn_player called ", player_id)
 
 
-func _process(delta):
-	pass
-	# on server, this should mostly just be waiting for player movement packets
-	
-	# wait for player connections
-	
-	
-	# handle player inputs
-	
-#	# move local player 0
-#	if Input.is_action_just_pressed("ui_right"):
-#		move_player(0, Vector2.RIGHT)
-#	elif Input.is_action_just_pressed("ui_left"):
-#		move_player(0, Vector2.LEFT)
-#	elif Input.is_action_just_pressed("ui_up"):
-#		move_player(0, Vector2.UP)
-#	elif Input.is_action_just_pressed("ui_down"):
-#		move_player(0, Vector2.DOWN)
-#
-#	# move local player 1, this is only for debug
-#	if Input.is_action_just_pressed("move_right"):
-#		move_player(1, Vector2.RIGHT)
-#	elif Input.is_action_just_pressed("move_left"):
-#		move_player(1, Vector2.LEFT)
-#	elif Input.is_action_just_pressed("move_up"):
-#		move_player(1, Vector2.UP)
-#	elif Input.is_action_just_pressed("move_down"):
-#		move_player(1, Vector2.DOWN)
-#
-#
+#func _process(delta):
+#	pass
 #	# update grid reflection of player_cell_pos
 #	for id in range(len(players)):
 #		players[id].position = (player_coords[id] * CELL_WIDTH) + origin.position
@@ -108,9 +81,11 @@ func move_player(player_id : int, dir : Vector2) -> void:
 	var new_y = clamp(new_pos.y, 0, GRID_HEIGHT-1)
 	player_coords[player_id]= Vector2(new_x, new_y)  # update with clamp
 	
+	
 	# check for collisions with players, only collide if attacker is in defender territory
 	# red is 0 and on left, blue is 1 and on right
 	# only collides when a player moves into another for now
+	var game_update_required = false  # flag to update game data if needed
 	for other_p_id in range(len(player_coords)):
 		if player_data[player_id][Pd.ALIVE]:  # only collide if player is alive
 			if other_p_id != player_id:  # skip yourself
@@ -137,6 +112,7 @@ func move_player(player_id : int, dir : Vector2) -> void:
 								if player_data[other_p_id][Pd.HAS_FLAG] == true:
 									player_data[other_p_id][Pd.HAS_FLAG] = false  # drop flag
 									start_flag_reset_timer(other_p_id)
+								game_update_required = true
 							elif not on_sides:  # kill self if on same side
 								print("COLLISION OFF SIDES")
 								players[player_id].set_alive(false)
@@ -145,6 +121,7 @@ func move_player(player_id : int, dir : Vector2) -> void:
 								if player_data[player_id][Pd.HAS_FLAG] == true:
 									player_data[player_id][Pd.HAS_FLAG] = false  # drop flag
 									start_flag_reset_timer(player_id)
+								game_update_required = true
 	
 	# respawn player, if dead and next to safe zone
 	if player_data[player_id][Pd.ALIVE] == false:
@@ -152,10 +129,12 @@ func move_player(player_id : int, dir : Vector2) -> void:
 			if player_coords[player_id].x == 1:
 				players[player_id].set_alive(true)
 				player_data[player_id][Pd.ALIVE] = true
+				game_update_required = true
 		elif player_data[player_id][Pd.TEAM] == 1:  # blue, right side respawn
 			if player_coords[player_id].x == GRID_WIDTH-2:
 				players[player_id].set_alive(true)
 				player_data[player_id][Pd.ALIVE] = true
+				game_update_required = true
 	
 	# check for collision with flag
 	for flag_id in range(len(flags)):
@@ -164,6 +143,7 @@ func move_player(player_id : int, dir : Vector2) -> void:
 				if player_data[player_id][Pd.TEAM] != flag_id:  # team = 0 or 1 (red or blue)
 					print("flag collided")
 					player_data[player_id][Pd.HAS_FLAG] = true
+					game_update_required = true
 				else:
 					player_coords[player_id] = Vector2(new_x, new_y) + ( dir*-1 )
 #			elif player_coords[player_id] == flag_coords[(player_id + 1) % 2]:  # check for collision with own flag, no puppy guarding
@@ -183,6 +163,7 @@ func move_player(player_id : int, dir : Vector2) -> void:
 				reset_flag(opposite_team_num)
 				player_data[player_id][Pd.HAS_FLAG] = false
 				refresh_hud()
+				game_update_required = true
 		# blue 1 flag, capture check
 		elif player_team == 1:
 			if flag_coords[opposite_team_num].x == GRID_WIDTH-2:
@@ -191,15 +172,23 @@ func move_player(player_id : int, dir : Vector2) -> void:
 				reset_flag(opposite_team_num)
 				player_data[player_id][Pd.HAS_FLAG] = false
 				refresh_hud()
+				game_update_required = true
+	
+	MP.send_coords(player_coords, flag_coords)
+	
+	if game_update_required == true:
+		MP.send_game_state(player_data, scores)
 
 
 func reset_flag(flag_id) -> void:
 	if flag_id == 0:  # reset red
 		flag_coords[0] = Vector2(0, GRID_HEIGHT/2)
 		flag_reset_timers[0].stop()
+		MP.send_game_state(player_data, scores)
 	elif flag_id == 1:  # reset blue
 		flag_coords[1] = Vector2(GRID_WIDTH-1, GRID_HEIGHT/2)
 		flag_reset_timers[1].stop()
+		MP.send_game_state(player_data, scores)
 
 
 func start_flag_reset_timer(flag_id : int) -> void:

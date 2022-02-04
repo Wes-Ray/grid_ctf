@@ -26,12 +26,16 @@ func send_input(dir : Vector2):
 	rpc_id(1, "receive_player_input", dir)
 
 
-remote func receive_positions():
-	pass
+remote func receive_coords(new_player_coords, new_flag_coords):
+	grid.player_coords = new_player_coords
+	grid.flag_coords = new_flag_coords
 
 
-remote func receive_game_state():
-	pass
+remote func receive_game_state(new_state, new_scores):
+	grid.player_data = new_state
+	grid.scores = new_scores
+	grid.refresh_hud()
+	grid.refresh_player_states()
 
 
 func _on_connection_failed():

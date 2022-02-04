@@ -95,6 +95,12 @@ func _process(delta):
 	for id in range(len(flags)):
 		flags[id].position = (flag_coords[id] * CELL_WIDTH) + origin.position
 
+
+func refresh_player_states():
+	for player_id in range(len(players)):
+		players[player_id].set_alive(player_data[player_id][Pd.ALIVE])
+
+
 func move(dir : Vector2):
 	MP.send_input(dir)
 
