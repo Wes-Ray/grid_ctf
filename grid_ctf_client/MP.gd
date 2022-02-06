@@ -26,7 +26,7 @@ func spawn_player():
 
 
 func send_input(dir : Vector2):
-	rpc_id(1, "receive_player_input", dir)
+	rpc_unreliable_id(1, "receive_player_input", dir)
 
 
 remote func receive_coords(new_player_coords, new_flag_coords):
