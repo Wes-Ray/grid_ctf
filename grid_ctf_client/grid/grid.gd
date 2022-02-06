@@ -36,10 +36,10 @@ var FLAG_RESET_TIME := 5  # time in seconds to reset flag
 
 func _ready():
 	# connect to server
-	MP.connect_to_server(self, SERVER_IP)
+	MP.connect_to_server(self)
 	
 	generate_map()
-	generate_players()
+#	generate_players()
 	generate_flags()
 	
 	# connect timers to functions
@@ -66,26 +66,11 @@ func _process(delta):
 	elif Input.is_action_just_pressed("ui_down"):
 		move(Vector2.DOWN)
 	
-#	# move local player 0
-#	if Input.is_action_just_pressed("ui_right"):
-#		move_player(0, Vector2.RIGHT)
-#	elif Input.is_action_just_pressed("ui_left"):
-#		move_player(0, Vector2.LEFT)
-#	elif Input.is_action_just_pressed("ui_up"):
-#		move_player(0, Vector2.UP)
-#	elif Input.is_action_just_pressed("ui_down"):
-#		move_player(0, Vector2.DOWN)
-#
-#	# move local player 1, this is only for debug
-#	if Input.is_action_just_pressed("move_right"):
-#		move_player(1, Vector2.RIGHT)
-#	elif Input.is_action_just_pressed("move_left"):
-#		move_player(1, Vector2.LEFT)
-#	elif Input.is_action_just_pressed("move_up"):
-#		move_player(1, Vector2.UP)
-#	elif Input.is_action_just_pressed("move_down"):
-#		move_player(1, Vector2.DOWN)
 	
+	# check for added players
+	if len(player_data) > len(players):
+		for x in range(len(players), len(player_data)):
+			spawn_player(x, player_data[x][Pd.TEAM])
 	
 	# update grid reflection of player_cell_pos
 	for id in range(len(players)):
@@ -96,6 +81,23 @@ func _process(delta):
 		flags[id].position = (flag_coords[id] * CELL_WIDTH) + origin.position
 
 
+func spawn_player(player_id, team):
+	print("Spawn player called")
+	# remove
+#	if team == 0:  # red team
+#		player_coords.append(Vector2(1,0))
+#	elif team == 1:  # blue team
+#		player_coords.append(Vector2(GRID_WIDTH-2, GRID_HEIGHT-1))
+	
+	player_coords.append(Vector2(-5, -5))
+	
+	# create new player and add to list
+	var new_player = player_inst.instance()
+	new_player.update_team_color(team)  # set color based on team number
+	add_child(new_player)
+	players.append(new_player)
+
+
 func refresh_player_states():
 	for player_id in range(len(players)):
 		players[player_id].set_alive(player_data[player_id][Pd.ALIVE])
@@ -103,104 +105,6 @@ func refresh_player_states():
 
 func move(dir : Vector2):
 	MP.send_input(dir)
-
-# this function should be used server-side, a remote function for the client will 
-# only send inputs with their player_id to the server
-##func move_player(player_id : int, dir : Vector2) -> void:
-#	# clamp cell_pos to grid_width and height, barring safe zones on either side
-#	var new_pos = player_coords[player_id] + dir
-#	# clamp new_x based on safe zones for red/blue
-#	var new_x
-#	if player_data[player_id][Pd.TEAM] == 0:  # red can't go all the way left
-#		new_x = clamp(new_pos.x, 1, GRID_WIDTH-1)
-#	elif player_data[player_id][Pd.TEAM] == 1:  # blue can't go all the way right
-#		new_x = clamp(new_pos.x, 0, GRID_WIDTH-2)
-#	var new_y = clamp(new_pos.y, 0, GRID_HEIGHT-1)
-#	player_coords[player_id]= Vector2(new_x, new_y)  # update with clamp
-#
-#	# check for collisions with players, only collide if attacker is in defender territory
-#	# red is 0 and on left, blue is 1 and on right
-#	# only collides when a player moves into another for now
-#	for other_p_id in range(len(player_coords)):
-#		if player_data[player_id][Pd.ALIVE]:  # only collide if player is alive
-#			if other_p_id != player_id:  # skip yourself
-#				if player_coords[other_p_id] == player_coords[player_id]:  # landed on other player
-#					if player_data[other_p_id][Pd.TEAM] != player_data[player_id][Pd.TEAM]:  # player on other team
-#						if player_data[other_p_id][Pd.ALIVE]:
-#							# check if other_player is on attacking player's side
-#							#if x < (GRID_WIDTH/2):
-#							# if collider is red team, collide with players on left side only
-#							var on_sides = false
-#							if player_data[player_id][Pd.TEAM] == 0:  # red team
-#								if player_coords[player_id].x < GRID_WIDTH/2:
-#									on_sides = true
-#							# elif blue team
-#							elif player_data[player_id][Pd.TEAM] == 1:  # blue team
-#								if player_coords[player_id].x >= GRID_WIDTH/2:
-#									on_sides = true
-#							# else no collision
-#							if on_sides:  # kill other player if on sides
-#								print("COLLISION ON SIDES")
-#								players[other_p_id].set_alive(false)
-#								player_data[other_p_id][Pd.ALIVE] = false
-#								# if other player has flag, drop flag and start reset timer
-#								if player_data[other_p_id][Pd.HAS_FLAG] == true:
-#									player_data[other_p_id][Pd.HAS_FLAG] = false  # drop flag
-#									start_flag_reset_timer(other_p_id)
-#							elif not on_sides:  # kill self if on same side
-#								print("COLLISION OFF SIDES")
-#								players[player_id].set_alive(false)
-#								player_data[player_id][Pd.ALIVE] = false
-#								# if other player has flag, drop flag and start reset timer
-#								if player_data[player_id][Pd.HAS_FLAG] == true:
-#									player_data[player_id][Pd.HAS_FLAG] = false  # drop flag
-#									start_flag_reset_timer(player_id)
-#
-#	# respawn player, if dead and next to safe zone
-#	if player_data[player_id][Pd.ALIVE] == false:
-#		if player_data[player_id][Pd.TEAM] == 0:  # red, left side respawn
-#			if player_coords[player_id].x == 1:
-#				players[player_id].set_alive(true)
-#				player_data[player_id][Pd.ALIVE] = true
-#		elif player_data[player_id][Pd.TEAM] == 1:  # blue, right side respawn
-#			if player_coords[player_id].x == GRID_WIDTH-2:
-#				players[player_id].set_alive(true)
-#				player_data[player_id][Pd.ALIVE] = true
-#
-#	# check for collision with flag
-#	for flag_id in range(len(flags)):
-#		if player_data[player_id][Pd.ALIVE] == true:
-#			if player_coords[player_id] == flag_coords[flag_id]:  # check for flag collision with goal flag
-#				if player_data[player_id][Pd.TEAM] != flag_id:  # team = 0 or 1 (red or blue)
-#					print("flag collided")
-#					player_data[player_id][Pd.HAS_FLAG] = true
-#				else:
-#					player_coords[player_id] = Vector2(new_x, new_y) + ( dir*-1 )
-##			elif player_coords[player_id] == flag_coords[(player_id + 1) % 2]:  # check for collision with own flag, no puppy guarding
-#
-#
-#	# if player HAS_FLAG, update flag position
-#	if player_data[player_id][Pd.HAS_FLAG] == true:
-#		var player_team = player_data[player_id][Pd.TEAM]
-#		var opposite_team_num = (player_team + 1) % 2
-#		flag_coords[opposite_team_num] = player_coords[player_id]
-#
-#		# red 0 with flag, capture check
-#		if player_team == 0:
-#			if flag_coords[opposite_team_num].x == 1:  #
-#				print("RED CAPTURED FLAG")
-#				scores[player_team] = scores[player_team] + 1
-#				reset_flag(opposite_team_num)
-#				player_data[player_id][Pd.HAS_FLAG] = false
-#				refresh_hud()
-#		# blue 1 flag, capture check
-#		elif player_team == 1:
-#			if flag_coords[opposite_team_num].x == GRID_WIDTH-2:
-#				print("BLUE CAPTURED FLAG")
-#				scores[player_team] = scores[player_team] + 1
-#				reset_flag(opposite_team_num)
-#				player_data[player_id][Pd.HAS_FLAG] = false
-#				refresh_hud()
 
 
 func reset_flag(flag_id) -> void:
@@ -216,7 +120,6 @@ func start_flag_reset_timer(flag_id : int) -> void:
 	flag_reset_timers[flag_id].wait_time = FLAG_RESET_TIME
 	flag_reset_timers[flag_id].start()
 	print("CALLED")
-
 
 
 func generate_map() -> void:
@@ -243,26 +146,15 @@ func generate_map() -> void:
 			origin.add_child(new_cell)
 
 
-func generate_players(player_count : int = 2) -> void:
-	
-	# generate player_data array SERVER
-	for player_id in range(player_count):
-		player_coords.append(Vector2(player_id*2+1, player_id*2+1))  # temp
-		
-		# append array with length of enums
-		var new_array = []
-		new_array.resize(len(Pd))
-		player_data.append(new_array)  
-		player_data[player_id][Pd.TEAM] = player_id % 2
-		player_data[player_id][Pd.ALIVE] = true
-		player_data[player_id][Pd.HAS_FLAG] = false
-		
-		# create new player and add to list
-		var new_player = player_inst.instance()
-		new_player.update_team_color(player_data[player_id][Pd.TEAM])  # set color based on team number
-#		origin.add_child(new_player)
-		add_child(new_player)
-		players.append(new_player)
+#func generate_players(player_count : int = 2) -> void:
+#
+#	# generate player_data array SERVER
+#	for player_id in range(player_count):
+#		spawn_player(player_id, player_id%2)
+
+
+func remove_player(player_id):
+	print("remove player: ", player_id)
 
 
 # called to update scores

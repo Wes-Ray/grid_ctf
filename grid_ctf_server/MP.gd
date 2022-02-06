@@ -9,8 +9,11 @@ var grid  # register grid scene to server
 
 var connected_players = []  # list of active players
 
-func _ready():
-	pass
+func _process(delta):  # testing
+	if Input.is_action_just_pressed("ui_accept"):
+		connected_players.append(12345)
+		grid.spawn_player(connected_players.find(12345), 1)  # send index of connected player
+		send_game_state(grid.player_data, grid.scores)
 
 
 func start_server(grid_in, max_players : int = MAX_PLAYERS):
@@ -26,9 +29,22 @@ func start_server(grid_in, max_players : int = MAX_PLAYERS):
 
 
 func _client_connected(player_rpc_id):
-	print("Client: ", str(player_rpc_id), " connected")
+	print("client: ", str(player_rpc_id), " connected")
+#	connected_players.append(player_rpc_id)
+#	var requested_team = rpc_id(player_rpc_id, "get_team")
+#	print(requested_team)
+
+
+
+remote func spawn_player(requested_team):
+	if not (requested_team == 0 or requested_team == 1):
+		requested_team = randi() % 2
+	print("SPAWN PLAYER CALLED: ", requested_team)
+	var player_rpc_id = get_tree().get_rpc_sender_id()
 	connected_players.append(player_rpc_id)
-	grid.spawn_player(connected_players.find(player_rpc_id))  # send index of connected player
+	grid.spawn_player(connected_players.find(player_rpc_id), requested_team)  # send index of connected player
+	send_game_state(grid.player_data, grid.scores)
+	send_coords(grid.player_coords, grid.flag_coords)
 
 
 func _client_disconnected(player_rpc_id):
@@ -56,8 +72,8 @@ func send_coords(player_coords, flag_coords):
 		rpc_unreliable_id(player_rpc_id, "receive_coords", player_coords, flag_coords)
 
 
-func send_game_state(game_data, scores):
+func send_game_state(player_data, scores):
 	for player_rpc_id in connected_players:
-		rpc_id(player_rpc_id, "receive_game_state", game_data, scores)
+		rpc_id(player_rpc_id, "receive_game_state", player_data, scores)
 
 # need to make functions to send updates to all players, and receive inputs from individual players

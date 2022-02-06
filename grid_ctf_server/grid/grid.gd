@@ -42,7 +42,7 @@ func _ready():
 
 	# can remove gfx later
 	generate_map()
-	generate_players()
+#	generate_players()
 	generate_flags()
 
 	# connect timers to functions
@@ -50,10 +50,6 @@ func _ready():
 	flag_reset_timers[0].connect("timeout", self, "reset_flag", [1])
 	add_child(flag_reset_timers[1])
 	flag_reset_timers[1].connect("timeout", self, "reset_flag", [0])
-
-
-func spawn_player(player_id):
-	print("spawn_player called ", player_id)
 
 
 #func _process(delta):
@@ -220,26 +216,38 @@ func generate_map() -> void:
 			origin.add_child(new_cell)
 
 
-func generate_players(player_count : int = 2) -> void:
+#func generate_players(player_count : int = 2) -> void:
+#
+#	# generate player_data array SERVER
+#	for player_id in range(player_count):
+#		spawn_player(player_id, player_id%2)
+
+
+func spawn_player(player_id, team):
+	# set coords based on team
+	if team == 0:  # red team
+		player_coords.append(Vector2(1,0))
+	elif team == 1:  # blue team
+		player_coords.append(Vector2(GRID_WIDTH-2, GRID_HEIGHT-1))
 	
-	# generate player_data array SERVER
-	for player_id in range(player_count):
-		player_coords.append(Vector2(player_id*2+1, player_id*2+1))  # temp
-		
-		# append array with length of enums
-		var new_array = []
-		new_array.resize(len(Pd))
-		player_data.append(new_array)  
-		player_data[player_id][Pd.TEAM] = player_id % 2
-		player_data[player_id][Pd.ALIVE] = true
-		player_data[player_id][Pd.HAS_FLAG] = false
-		
-		# create new player and add to list
-		var new_player = player_inst.instance()
-		new_player.update_team_color(player_data[player_id][Pd.TEAM])  # set color based on team number
+	# append array with length of enums
+	var new_array = []
+	new_array.resize(len(Pd))
+	player_data.append(new_array)  
+	player_data[player_id][Pd.TEAM] = team
+	player_data[player_id][Pd.ALIVE] = true
+	player_data[player_id][Pd.HAS_FLAG] = false
+	
+	# create new player and add to list
+	var new_player = player_inst.instance()
+	new_player.update_team_color(player_data[player_id][Pd.TEAM])  # set color based on team number
 #		origin.add_child(new_player)
-		add_child(new_player)
-		players.append(new_player)
+	add_child(new_player)
+	players.append(new_player)
+
+
+func remove_player(player_id):
+	print("remove player: ", player_id)
 
 
 # called to update scores
