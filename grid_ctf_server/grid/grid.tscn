@@ -7,36 +7,3 @@ script = ExtResource( 2 )
 
 [node name="origin" type="Position2D" parent="."]
 position = Vector2( 62, 56 )
-
-[node name="hud" type="Node2D" parent="."]
-
-[node name="blue_score" type="RichTextLabel" parent="hud"]
-margin_left = 1001.0
-margin_top = 18.0
-margin_right = 1041.0
-margin_bottom = 58.0
-text = "0
-"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="red_score" type="RichTextLabel" parent="hud"]
-margin_left = 12.0
-margin_top = 13.0
-margin_right = 52.0
-margin_bottom = 53.0
-text = "0"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="."]
-margin_left = 438.0
-margin_top = 20.0
-margin_right = 478.0
-margin_bottom = 34.0
-text = "SERVERRRRRRRRRRRR"
-__meta__ = {
-"_edit_use_anchors_": false
-}

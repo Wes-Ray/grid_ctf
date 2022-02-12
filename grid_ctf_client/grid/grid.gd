@@ -74,11 +74,13 @@ func _process(delta):
 	
 	# update grid reflection of player_cell_pos
 	for id in range(len(players)):
+		pass
 		players[id].position = (player_coords[id] * CELL_WIDTH) + origin.position
 	
 	# draw flags
 	for id in range(len(flags)):
 		flags[id].position = (flag_coords[id] * CELL_WIDTH) + origin.position
+
 
 
 func spawn_player(player_id, team):
