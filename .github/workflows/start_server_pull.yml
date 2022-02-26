@@ -22,7 +22,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
       
       - name: git pull
-        run: ssh staging 'cd /root/github; git pull'
+        run: ssh staging 'cd /root/github/grid_ctf; git pull'
 
 
 
