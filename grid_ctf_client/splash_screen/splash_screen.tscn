@@ -37,3 +37,35 @@ bbcode_enabled = true
 bbcode_text = "[color=blue]BLUE[/color]"
 text = "BLUE"
 scroll_active = false
+
+[node name="ip_label" type="RichTextLabel" parent="."]
+margin_left = 448.0
+margin_top = 264.0
+margin_right = 520.0
+margin_bottom = 280.0
+text = "SERVER IP: "
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ip_input" type="TextEdit" parent="."]
+margin_left = 520.0
+margin_top = 260.0
+margin_right = 644.0
+margin_bottom = 282.0
+text = "144.126.208.21"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Button" type="Button" parent="."]
+margin_left = 503.0
+margin_top = 333.0
+margin_right = 566.0
+margin_bottom = 353.0
+text = "Connect"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[connection signal="pressed" from="Button" to="." method="_on_Button_pressed"]
