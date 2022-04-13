@@ -121,7 +121,6 @@ func reset_flag(flag_id) -> void:
 func start_flag_reset_timer(flag_id : int) -> void:
 	flag_reset_timers[flag_id].wait_time = FLAG_RESET_TIME
 	flag_reset_timers[flag_id].start()
-	print("CALLED")
 
 
 func generate_map() -> void:

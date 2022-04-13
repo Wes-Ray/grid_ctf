@@ -175,6 +175,11 @@ func spawn_player(player_id, team):
 
 func remove_player(player_id):
 	print("remove player: ", player_id)
+	player_coords[player_id] = Vector2(-40, -40)
+	
+	# reset flag if carried
+	if player_data[player_id][Pd.HAS_FLAG] == true:
+		reset_flag((player_data[player_id][Pd.TEAM] + 1) % 2)  # might need to switch to opposite
 
 
 func generate_flags() -> void:
